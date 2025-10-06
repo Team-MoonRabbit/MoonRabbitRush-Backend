@@ -79,12 +79,18 @@ public class GoogleOAuthService {
                 .block();
 
         User user = userRepository.findByEmail(googleUser.email())
-                .orElseGet(() -> userRepository.save(
-                        User.builder()
-                                .email(googleUser.email())
-                                .score("0")
-                                .build()
-                ));
+                .orElseGet(() -> {
+                    if (!googleUser.email().endsWith("@gsm.hs.kr")) {
+                        throw new IllegalArgumentException("허용되지 않은 이메일 도메인입니다.");
+                    }
+                    return userRepository.save(
+                            User.builder()
+                                    .email(googleUser.email())
+                                    .score("0")
+                                    .build()
+                    );
+                });
+
 
         JwtDetails accessJwt = jwtProvider.generateToken(user.getId(), JwtType.ACCESS_TOKEN);
         JwtDetails refreshJwt = jwtProvider.generateToken(user.getId(), JwtType.REFRESH_TOKEN);

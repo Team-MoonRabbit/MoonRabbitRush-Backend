@@ -1,6 +1,7 @@
 package com.moon.rabbit.domain.user.service;
 
 import com.moon.rabbit.domain.user.dto.RankResponse;
+import com.moon.rabbit.domain.user.dto.UserResponse;
 import com.moon.rabbit.global.exception.HttpException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,9 +12,9 @@ import com.moon.rabbit.domain.user.entity.User;
 import com.moon.rabbit.domain.user.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
 import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,10 +29,11 @@ public class GameService {
     private final UserRepository userRepository;
 
     @Transactional
-    public User updateScore(String encryptedScore) {
+    public User updateScore(String encryptedScore, String iv) {
         User user = getCurrentUser();
-        int newScore = decryptScore(encryptedScore);
+        int newScore = decryptScore(encryptedScore, iv);
         int currentScore = parseScore(user.getScore());
+
         if (newScore > currentScore) {
             user.setScore(String.valueOf(newScore));
             userRepository.save(user);
@@ -39,19 +41,24 @@ public class GameService {
         return user;
     }
 
-    private int decryptScore(String encrypted) {
+    private int decryptScore(String encrypted, String iv) {
         try {
-            byte[] decodedCipher = Base64.getDecoder().decode(encrypted);
+            byte[] cipherBytes = Base64.getDecoder().decode(encrypted);
             byte[] keyBytes = Base64.getDecoder().decode(aesKey);
-            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
+            byte[] ivBytes = Base64.getDecoder().decode(iv);
 
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, keySpec);
+            if (ivBytes.length != 16) throw new RuntimeException("IV 길이 오류: 16바이트여야 합니다.");
 
-            byte[] decryptedBytes = cipher.doFinal(decodedCipher);
-            String decrypted = new String(decryptedBytes, StandardCharsets.UTF_8).trim();
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), new IvParameterSpec(ivBytes));
+
+            String decrypted = new String(cipher.doFinal(cipherBytes), StandardCharsets.UTF_8).trim();
+
+            if (decrypted.isEmpty()) throw new RuntimeException("복호화 결과가 비어 있습니다.");
 
             return Integer.parseInt(decrypted);
+        } catch (NumberFormatException nfe) {
+            throw new RuntimeException("복호화된 값이 숫자가 아닙니다.", nfe);
         } catch (Exception e) {
             throw new RuntimeException("점수 복호화 중 오류가 발생했습니다.", e);
         }
@@ -87,6 +94,16 @@ public class GameService {
         } catch (NumberFormatException e) {
             return 0;
         }
+    }
+
+    @Transactional
+    public UserResponse userInfo() {
+        User user = getCurrentUser();
+
+        return new UserResponse(
+                user.getEmail(),
+                user.getScore()
+        );
     }
 
     @Transactional
