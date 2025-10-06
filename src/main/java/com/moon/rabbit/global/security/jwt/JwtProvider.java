@@ -87,7 +87,7 @@ public class JwtProvider {
     }
 
 
-    public JwtDetails generateToken(Long id, JwtType jwtType) {
+    public JwtDetails generateToken(String id, JwtType jwtType) {
         long tokenExpires = jwtType == JwtType.ACCESS_TOKEN
                 ? jwtProperties.getAccessTokenExpires()
                 : jwtProperties.getRefreshTokenExpires();

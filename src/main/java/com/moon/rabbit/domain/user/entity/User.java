@@ -13,11 +13,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class User {
 
     @Id
-    private Long id;
-
-    private String googleId;
+    private String id;
     private String email;
-    private String name;
 
-    private String Score;
+    private String score;
 }

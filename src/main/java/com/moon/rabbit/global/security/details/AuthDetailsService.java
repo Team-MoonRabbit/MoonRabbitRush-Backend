@@ -15,10 +15,8 @@ public class AuthDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) {
-        Long id = Long.parseLong(username);
-
-        UserCredential credential = userRepository.findCredentialById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("유저를 찾을 수 없습니다" + id));
+        UserCredential credential = userRepository.findCredentialById(username)
+                .orElseThrow(() -> new UsernameNotFoundException("유저를 찾을 수 없습니다" + username));
 
         return new AuthDetails(credential);
     }

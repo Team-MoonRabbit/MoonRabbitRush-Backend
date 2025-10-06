@@ -78,24 +78,23 @@ public class GoogleOAuthService {
                 .bodyToMono(GoogleUserInfo.class)
                 .block();
 
-        User user = userRepository.findByGoogleId(googleUser.id())
+        User user = userRepository.findByEmail(googleUser.email())
                 .orElseGet(() -> userRepository.save(
                         User.builder()
-                                .googleId(googleUser.id())
                                 .email(googleUser.email())
-                                .name(googleUser.name())
+                                .score("0")
                                 .build()
                 ));
 
         JwtDetails accessJwt = jwtProvider.generateToken(user.getId(), JwtType.ACCESS_TOKEN);
         JwtDetails refreshJwt = jwtProvider.generateToken(user.getId(), JwtType.REFRESH_TOKEN);
 
-        refreshTokenRepository.findByUserId(user.getId().toString())
+        refreshTokenRepository.findByUserId(user.getId())
                 .ifPresent(refreshTokenRepository::delete);
 
         refreshTokenRepository.save(
                 RefreshToken.builder()
-                        .userId(user.getId().toString())
+                        .userId(user.getId())
                         .token(refreshJwt.token())
                         .expiryDate(Instant.now().plusMillis(refreshTokenTtl))
                         .build()

@@ -27,6 +27,10 @@ public class AuthService {
     private long refreshTokenTtl;
 
     public TokenResponse refresh(String refreshToken) {
+        if(refreshToken != null && refreshToken.startsWith("Bearer ")) {
+            refreshToken = refreshToken.substring(7);
+        }
+
         if (!jwtProvider.validateToken(refreshToken, JwtType.REFRESH_TOKEN)) {
             throw new HttpException(HttpStatus.FORBIDDEN, "잘못된 토큰입니다.");
         }
@@ -38,7 +42,7 @@ public class AuthService {
             throw new HttpException(HttpStatus.FORBIDDEN, "토큰이 만료되었습니다.");
         }
 
-        Long userId = Long.valueOf(storedToken.getUserId());
+        String  userId = storedToken.getUserId();
         JwtDetails newAccessToken = jwtProvider.generateToken(userId, JwtType.ACCESS_TOKEN);
         JwtDetails newRefreshToken = jwtProvider.generateToken(userId, JwtType.REFRESH_TOKEN);
 
@@ -55,6 +59,9 @@ public class AuthService {
     }
 
     public void logout(String refreshToken) {
+        if(refreshToken != null && refreshToken.startsWith("Bearer ")) {
+            refreshToken = refreshToken.substring(7);
+        }
         if (!jwtProvider.validateToken(refreshToken, JwtType.REFRESH_TOKEN)) {
             throw new HttpException(HttpStatus.UNAUTHORIZED, "잘못된 리프레시 토큰입니다.");
         }
