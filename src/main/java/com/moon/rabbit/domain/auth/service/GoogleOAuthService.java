@@ -82,13 +82,14 @@ public class GoogleOAuthService {
                 .orElseGet(() -> {
                     if (!googleUser.email().endsWith("@gsm.hs.kr")) {
                         throw new IllegalArgumentException("허용되지 않은 이메일 도메인입니다.");
-                    }
-                    return userRepository.save(
+                    } else {
+                        return userRepository.save(
                             User.builder()
-                                    .email(googleUser.email())
-                                    .score("0")
-                                    .build()
-                    );
+                                .email(googleUser.email())
+                                .score("0")
+                                .build()
+                        );
+                    }
                 });
 
 
