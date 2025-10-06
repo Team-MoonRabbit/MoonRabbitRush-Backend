@@ -3,7 +3,7 @@ spring:
     name: rabbit
   data:
     mongodb:
-      uri: mongodb://admin:1234@localhost:27017/rabbit?authSource=admin
+      uri: ${MONGODB_URI}
 
   security:
     oauth2:
